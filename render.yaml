@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: apke-tuitions-server
+    env: node
+    region: singapore
+    plan: free
+    branch: main
+    buildCommand: npm install
+    startCommand: node server.js
