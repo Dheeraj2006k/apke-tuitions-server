@@ -9,27 +9,54 @@ const app = express();
 const parentRoutes = require("./routes/parent.routes");
 const tutorRoutes = require("./routes/tutor.routes");
 
-// Middleware
-app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:5173",
-  credentials: true,
-}));
+const configuredOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const allowedOrigins = Array.from(
+  new Set([
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://apketuitions.com",
+    "https://www.apketuitions.com",
+    ...configuredOrigins,
+  ])
+);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  })
+);
 app.use(express.json());
 
-// Connect DB
 connectDB();
 
-// Routes
 app.use("/api", parentRoutes);
 app.use("/api", tutorRoutes);
 app.use("/api", adminRoutes);
 
-// Test Route
 app.get("/", (req, res) => {
   res.send("Apke Tuitions API Running...");
 });
 
-// Start Server
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    status: "ok",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
