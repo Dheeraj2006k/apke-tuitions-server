@@ -50,22 +50,22 @@ exports.createParentRequest = async (req, res) => {
       message,
     });
 
-    try {
-      console.log("Calling email...");
-      await sendEmail(
-        "New Tutor Request",
-        `New request from ${parent_name} for ${subjects}. Location: ${location}. Phone: ${phone}`
-      );
-    } catch (emailError) {
-      console.error("Parent request saved, but email notification failed:", emailError.message);
-    }
-
-    // Response
-    return res.status(201).json({
+    // Respond first so slow SMTP does not delay form submission.
+    res.status(201).json({
       success: true,
       message: "Tutor request submitted successfully",
       data: newRequest,
     });
+
+    console.log("Calling email in background...");
+    void sendEmail(
+      "New Tutor Request",
+      `New request from ${parent_name} for ${subjects}. Location: ${location}. Phone: ${phone}`
+    ).catch((emailError) => {
+      console.error("Parent request saved, but email notification failed:", emailError.message);
+    });
+
+    return;
   } catch (error) {
     console.error("Parent Request Error:", error);
     res.status(500).json({
