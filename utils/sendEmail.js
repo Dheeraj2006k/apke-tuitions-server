@@ -1,4 +1,7 @@
+const dns = require("dns").promises;
 const nodemailer = require("nodemailer");
+
+const SMTP_HOSTNAME = "smtp.gmail.com";
 
 const sendEmail = async (subject, text) => {
   const emailUser = process.env.EMAIL_USER?.trim();
@@ -8,9 +11,15 @@ const sendEmail = async (subject, text) => {
     throw new Error("Missing EMAIL_USER or EMAIL_PASS in server environment");
   }
 
+  const [smtpIpv4] = await dns.resolve4(SMTP_HOSTNAME);
+
+  if (!smtpIpv4) {
+    throw new Error(`Could not resolve an IPv4 address for ${SMTP_HOSTNAME}`);
+  }
+
   try {
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
+      host: smtpIpv4,
       port: 587,
       secure: false,
       connectionTimeout: 5000,
@@ -19,6 +28,9 @@ const sendEmail = async (subject, text) => {
       auth: {
         user: emailUser,
         pass: emailPass,
+      },
+      tls: {
+        servername: SMTP_HOSTNAME,
       },
     });
 
