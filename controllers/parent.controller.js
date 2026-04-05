@@ -1,7 +1,6 @@
 const ParentRequest = require("../models/ParentRequest");
 const sendEmail = require("../utils/sendEmail");
 
-
 // Create Parent Request
 exports.createParentRequest = async (req, res) => {
   try {
@@ -51,22 +50,22 @@ exports.createParentRequest = async (req, res) => {
       message,
     });
 
-    // ✅ CALL EMAIL BEFORE RETURN
-    console.log("Calling email...");
-    sendEmail(
-      "New Tutor Request",
-      `New request from ${parent_name} for ${subjects}`
-    );
+    try {
+      console.log("Calling email...");
+      await sendEmail(
+        "New Tutor Request",
+        `New request from ${parent_name} for ${subjects}. Location: ${location}. Phone: ${phone}`
+      );
+    } catch (emailError) {
+      console.error("Parent request saved, but email notification failed:", emailError.message);
+    }
 
-    
-    
     // Response
     return res.status(201).json({
       success: true,
       message: "Tutor request submitted successfully",
       data: newRequest,
     });
-
   } catch (error) {
     console.error("Parent Request Error:", error);
     res.status(500).json({
